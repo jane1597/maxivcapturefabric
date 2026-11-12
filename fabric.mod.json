@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "maxivcapture",
+  "version": "1.0.0",
+  "name": "Max IV Capture",
+  "description": "Every Pokemon you catch with a Poke Ball gets perfect (31) IVs in all stats.",
+  "authors": ["jane1597"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.maxivcapture.MaxIvCapture"]
+  },
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*",
+    "cobblemon": "*"
+  }
+}
