@@ -10,7 +10,7 @@ import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Every Pokemon the player catches gets 31 in every IV. */
+/** Max IVs on capture, crop growth multiplier, guaranteed Pokemon drops. */
 public class MaxIvCapture implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("maxivcapture");
 
@@ -21,6 +21,8 @@ public class MaxIvCapture implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        Config.load();
+
         CobblemonEvents.POKEMON_CAPTURED.subscribe(Priority.NORMAL, event -> {
             try {
                 Pokemon pokemon = event.getPokemon();
@@ -32,6 +34,9 @@ public class MaxIvCapture implements ModInitializer {
             }
             return Unit.INSTANCE;
         });
-        LOGGER.info("Max IV Capture loaded: caught Pokemon get 31 IVs in every stat.");
+
+        CropBooster.register();
+        DropAll.register();
+        LOGGER.info("Max IV Capture loaded: max IVs on capture, crop growth multiplier, guaranteed Pokemon drops.");
     }
 }
