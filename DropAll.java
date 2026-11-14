@@ -30,6 +30,7 @@ public class DropAll {
     private boolean warned = false;
 
     private void apply() {
+        RideStats.apply();
         if (!Config.allDrops()) return;
         int changed = 0;
         int species = 0;

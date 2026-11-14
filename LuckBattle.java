@@ -22,7 +22,7 @@ public final class LuckBattle {
     public static void register() {
         CobblemonEvents.BATTLE_STARTED_POST.subscribe(Priority.NORMAL, event -> {
             try {
-                if (Config.alwaysCrit() || Config.maxMultiHit()) {
+                if (Config.alwaysCrit() || Config.maxMultiHit() || Config.alwaysHit()) {
                     Object battle = event.getClass().getMethod("getBattle").invoke(event);
                     apply(battle);
                 }
@@ -46,11 +46,11 @@ public final class LuckBattle {
 
         String script = "(function(){var b=battle,a=b.actions;var IDS=[" + String.join(",", ids) + "];"
                 + "a.__luckIds=IDS;if(a.__luckInstalled)return;a.__luckInstalled=1;"
-                + "var CRIT=" + Config.alwaysCrit() + ",MULTI=" + Config.maxMultiHit() + ";"
+                + "var ACC=" + Config.alwaysHit() + ",CRIT=" + Config.alwaysCrit() + ",MULTI=" + Config.maxMultiHit() + ";"
                 + "var o=a.useMoveInner;"
                 + "a.useMoveInner=function(m,p,op){try{if(p&&p.side&&this.__luckIds.indexOf(p.side.id)>=0){"
                 + "var am=(m&&typeof m.hit==='number')?m:this.dex.getActiveMove(m);"
-                + "if(am.category!=='Status'){if(CRIT)am.willCrit=true;"
+                + "if(ACC)am.accuracy=true;if(am.category!=='Status'){if(CRIT)am.willCrit=true;"
                 + "if(MULTI&&Array.isArray(am.multihit))am.multihit=am.multihit[1];}m=am;}}catch(e){}"
                 + "return o.call(this,m,p,op);};})()";
 

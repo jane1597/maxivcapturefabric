@@ -17,6 +17,9 @@ public final class Config {
     public static volatile boolean alwaysCrit = true;
     public static volatile boolean maxMultiHit = true;
 
+    public static volatile boolean alwaysHit = true;
+    public static volatile boolean maxRideStats = true;
+
     private Config() {}
 
     public static void load() {
@@ -32,6 +35,8 @@ public final class Config {
             guaranteedPokemonDrops = Boolean.parseBoolean(p.getProperty("guaranteedPokemonDrops", "true").trim());
             alwaysCrit = Boolean.parseBoolean(p.getProperty("alwaysCrit", "true").trim());
             maxMultiHit = Boolean.parseBoolean(p.getProperty("maxMultiHit", "true").trim());
+            alwaysHit = Boolean.parseBoolean(p.getProperty("alwaysHit", "true").trim());
+            maxRideStats = Boolean.parseBoolean(p.getProperty("maxRideStats", "true").trim());
         } catch (Exception e) {
             MaxIvCapture.LOGGER.warn("Bad config, using defaults: {}", e.toString());
         }
@@ -39,6 +44,8 @@ public final class Config {
         p.setProperty("guaranteedPokemonDrops", String.valueOf(guaranteedPokemonDrops));
         p.setProperty("alwaysCrit", String.valueOf(alwaysCrit));
         p.setProperty("maxMultiHit", String.valueOf(maxMultiHit));
+        p.setProperty("alwaysHit", String.valueOf(alwaysHit));
+        p.setProperty("maxRideStats", String.valueOf(maxRideStats));
         try (OutputStream out = Files.newOutputStream(file)) {
             p.store(out, "Max IV Capture. cropGrowthMultiplier: 1 (normal) to 100. guaranteedPokemonDrops: true = every Pokemon drops its whole drop table.");
         } catch (IOException ignored) {
@@ -48,5 +55,7 @@ public final class Config {
     public static int cropGrowth() { return cropGrowthMultiplier; }
     public static boolean alwaysCrit() { return alwaysCrit; }
     public static boolean maxMultiHit() { return maxMultiHit; }
+    public static boolean alwaysHit() { return alwaysHit; }
+    public static boolean maxRideStats() { return maxRideStats; }
     public static boolean allDrops() { return guaranteedPokemonDrops; }
 }
