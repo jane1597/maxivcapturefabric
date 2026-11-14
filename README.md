@@ -6,3 +6,6 @@ Put the jar in `mods`. Needs Cobblemon and Fabric API (Cobbleverse has both).
 
 ## v1.1.0
 Config file `config/maxivcapture.properties`: `cropGrowthMultiplier` (1-100) and `guaranteedPokemonDrops` (true/false).
+
+## v1.1.1 - lucky battles
+`alwaysCrit` and `maxMultiHit` in config/maxivcapture.properties (both true by default). Look for "Lucky battle:" in latest.log.

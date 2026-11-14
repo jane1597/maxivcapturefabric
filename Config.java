@@ -14,6 +14,9 @@ public final class Config {
     public static volatile int cropGrowthMultiplier = 1;
     public static volatile boolean guaranteedPokemonDrops = true;
 
+    public static volatile boolean alwaysCrit = true;
+    public static volatile boolean maxMultiHit = true;
+
     private Config() {}
 
     public static void load() {
@@ -27,11 +30,15 @@ public final class Config {
             }
             cropGrowthMultiplier = Math.max(1, Math.min(100, Integer.parseInt(p.getProperty("cropGrowthMultiplier", "1").trim())));
             guaranteedPokemonDrops = Boolean.parseBoolean(p.getProperty("guaranteedPokemonDrops", "true").trim());
+            alwaysCrit = Boolean.parseBoolean(p.getProperty("alwaysCrit", "true").trim());
+            maxMultiHit = Boolean.parseBoolean(p.getProperty("maxMultiHit", "true").trim());
         } catch (Exception e) {
             MaxIvCapture.LOGGER.warn("Bad config, using defaults: {}", e.toString());
         }
         p.setProperty("cropGrowthMultiplier", String.valueOf(cropGrowthMultiplier));
         p.setProperty("guaranteedPokemonDrops", String.valueOf(guaranteedPokemonDrops));
+        p.setProperty("alwaysCrit", String.valueOf(alwaysCrit));
+        p.setProperty("maxMultiHit", String.valueOf(maxMultiHit));
         try (OutputStream out = Files.newOutputStream(file)) {
             p.store(out, "Max IV Capture. cropGrowthMultiplier: 1 (normal) to 100. guaranteedPokemonDrops: true = every Pokemon drops its whole drop table.");
         } catch (IOException ignored) {
@@ -39,5 +46,7 @@ public final class Config {
     }
 
     public static int cropGrowth() { return cropGrowthMultiplier; }
+    public static boolean alwaysCrit() { return alwaysCrit; }
+    public static boolean maxMultiHit() { return maxMultiHit; }
     public static boolean allDrops() { return guaranteedPokemonDrops; }
 }
