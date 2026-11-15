@@ -12,3 +12,9 @@ Config file `config/maxivcapture.properties`: `cropGrowthMultiplier` (1-100) and
 
 ## v1.1.2
 `alwaysHit` (player Pokemon moves never miss) and `maxRideStats` (all ride stats 100). Both true by default. Look for "Max ride stats:" and "Lucky battle:" in latest.log.
+
+## v1.1.3
+`guaranteedEffects` (true by default): extra effects of moves used by a player's Pokemon always happen (Bite flinch, burn chance, stat drops, etc.).
+
+## v1.1.4
+`doubleItemEffects` (true by default): buff effects of held items of a player's Pokemon are doubled (damage/speed/defense boosts and item healing).

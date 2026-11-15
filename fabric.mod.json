@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "maxivcapture",
-  "version": "1.1.2",
+  "version": "1.1.4",
   "name": "Max IV Capture",
   "description": "Max IVs on capture, crop growth multiplier, guaranteed Pokemon drops.",
   "authors": ["jane1597"],
