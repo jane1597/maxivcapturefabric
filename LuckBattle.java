@@ -58,6 +58,13 @@ public final class LuckBattle {
                 + "return o.call(this,m,p,op);};})()";
     }
 
+    /** Second, lower-level way to force crits: some mods replace useMoveInner, but everything still goes through getDamage. */
+    static String critScript(String ids) {
+        return "(function(){var b=battle,a=b.actions;if(a.__luckCrit)return;a.__luckCrit=1;var IDS=" + ids + ";var g=a.getDamage;"
+                + "a.getDamage=function(s,t,m,q){try{if(s&&s.side&&IDS.indexOf(s.side.id)>=0&&m&&typeof m==='object'&&m.category!=='Status')m.willCrit=true;}catch(e){}"
+                + "return g.call(this,s,t,m,q);};})()";
+    }
+
     private static void apply(Object battle) throws Exception {
         Object actors = battle.getClass().getMethod("getActors").invoke(battle);
         List<String> ids = new ArrayList<>();
@@ -75,6 +82,7 @@ public final class LuckBattle {
         if (Config.alwaysCrit() || Config.maxMultiHit() || Config.alwaysHit() || Config.guaranteedEffects()) {
             scripts.add(moveScript(idList, Config.guaranteedEffects(), Config.alwaysHit(), Config.alwaysCrit(), Config.maxMultiHit()));
         }
+        if (Config.alwaysCrit()) scripts.add(critScript(idList));
         if (scripts.isEmpty()) return;
 
         Method send = null;
