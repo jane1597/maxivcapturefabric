@@ -18,3 +18,6 @@ Config file `config/maxivcapture.properties`: `cropGrowthMultiplier` (1-100) and
 
 ## v1.1.4
 `doubleItemEffects` (true by default): buff effects of held items of a player's Pokemon are doubled (damage/speed/defense boosts and item healing).
+
+## v1.1.5
+`pastureDropsPerHour` (default 360 = a drop every 10 s per pastured Pokemon; 0 = off). Sets `drops.per_hour` in config/pastureloot.toml (Pasture Loot mod) and reloads it. Pasture drops are 100% because guaranteedPokemonDrops already makes every drop table 100%.

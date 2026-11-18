@@ -24,6 +24,9 @@ public final class Config {
 
     public static volatile boolean doubleItemEffects = true;
 
+    /** Pasture Loot drops per hour per Pokemon (its default is 3). 0 = leave Pasture Loot alone. */
+    public static volatile int pastureDropsPerHour = 360;
+
     private Config() {}
 
     public static void load() {
@@ -42,6 +45,7 @@ public final class Config {
             alwaysHit = Boolean.parseBoolean(p.getProperty("alwaysHit", "true").trim());
             guaranteedEffects = Boolean.parseBoolean(p.getProperty("guaranteedEffects", "true").trim());
             doubleItemEffects = Boolean.parseBoolean(p.getProperty("doubleItemEffects", "true").trim());
+            pastureDropsPerHour = Math.max(0, Math.min(3600, Integer.parseInt(p.getProperty("pastureDropsPerHour", "360").trim())));
             maxRideStats = Boolean.parseBoolean(p.getProperty("maxRideStats", "true").trim());
         } catch (Exception e) {
             MaxIvCapture.LOGGER.warn("Bad config, using defaults: {}", e.toString());
@@ -54,8 +58,9 @@ public final class Config {
         p.setProperty("maxRideStats", String.valueOf(maxRideStats));
         p.setProperty("guaranteedEffects", String.valueOf(guaranteedEffects));
         p.setProperty("doubleItemEffects", String.valueOf(doubleItemEffects));
+        p.setProperty("pastureDropsPerHour", String.valueOf(pastureDropsPerHour));
         try (OutputStream out = Files.newOutputStream(file)) {
-            p.store(out, "Max IV Capture. cropGrowthMultiplier: 1 (normal) to 100. guaranteedPokemonDrops: true = every Pokemon drops its whole drop table.");
+            p.store(out, "Max IV Capture. pastureDropsPerHour: Pasture Loot drops per hour per Pokemon (0 = do not change). cropGrowthMultiplier: 1 (normal) to 100. guaranteedPokemonDrops: true = every Pokemon drops its whole drop table.");
         } catch (IOException ignored) {
         }
     }
@@ -67,5 +72,6 @@ public final class Config {
     public static boolean maxRideStats() { return maxRideStats; }
     public static boolean guaranteedEffects() { return guaranteedEffects; }
     public static boolean doubleItemEffects() { return doubleItemEffects; }
+    public static int pastureDropsPerHour() { return pastureDropsPerHour; }
     public static boolean allDrops() { return guaranteedPokemonDrops; }
 }
