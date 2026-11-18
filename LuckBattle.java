@@ -22,7 +22,7 @@ public final class LuckBattle {
     public static void register() {
         CobblemonEvents.BATTLE_STARTED_POST.subscribe(Priority.NORMAL, event -> {
             try {
-                if (Config.alwaysCrit() || Config.maxMultiHit() || Config.alwaysHit() || Config.guaranteedEffects() || Config.doubleItemEffects()) {
+                if (Config.luckyBattles() && (Config.alwaysCrit() || Config.maxMultiHit() || Config.alwaysHit() || Config.guaranteedEffects() || Config.doubleItemEffects())) {
                     Object battle = event.getClass().getMethod("getBattle").invoke(event);
                     apply(battle);
                 }

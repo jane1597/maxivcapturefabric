@@ -21,3 +21,6 @@ Config file `config/maxivcapture.properties`: `cropGrowthMultiplier` (1-100) and
 
 ## v1.1.5
 `pastureDropsPerHour` (default 360 = a drop every 10 s per pastured Pokemon; 0 = off). Sets `drops.per_hour` in config/pastureloot.toml (Pasture Loot mod) and reloads it. Pasture drops are 100% because guaranteedPokemonDrops already makes every drop table 100%.
+
+## v1.1.6
+`luckyBattles` master switch (default false). When false the mod never touches the battle engine (alwaysCrit, maxMultiHit, alwaysHit, guaranteedEffects, doubleItemEffects do nothing). Added because battles stalled after picking a move on the updated Cobbleverse.

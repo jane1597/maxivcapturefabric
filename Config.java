@@ -14,6 +14,9 @@ public final class Config {
     public static volatile int cropGrowthMultiplier = 1;
     public static volatile boolean guaranteedPokemonDrops = true;
 
+    /** Master switch for everything that touches the battle engine. Off by default since Cobbleverse 1.1.5 battles stalled. */
+    public static volatile boolean luckyBattles = false;
+
     public static volatile boolean alwaysCrit = true;
     public static volatile boolean maxMultiHit = true;
 
@@ -40,6 +43,7 @@ public final class Config {
             }
             cropGrowthMultiplier = Math.max(1, Math.min(100, Integer.parseInt(p.getProperty("cropGrowthMultiplier", "1").trim())));
             guaranteedPokemonDrops = Boolean.parseBoolean(p.getProperty("guaranteedPokemonDrops", "true").trim());
+            luckyBattles = Boolean.parseBoolean(p.getProperty("luckyBattles", "false").trim());
             alwaysCrit = Boolean.parseBoolean(p.getProperty("alwaysCrit", "true").trim());
             maxMultiHit = Boolean.parseBoolean(p.getProperty("maxMultiHit", "true").trim());
             alwaysHit = Boolean.parseBoolean(p.getProperty("alwaysHit", "true").trim());
@@ -52,6 +56,7 @@ public final class Config {
         }
         p.setProperty("cropGrowthMultiplier", String.valueOf(cropGrowthMultiplier));
         p.setProperty("guaranteedPokemonDrops", String.valueOf(guaranteedPokemonDrops));
+        p.setProperty("luckyBattles", String.valueOf(luckyBattles));
         p.setProperty("alwaysCrit", String.valueOf(alwaysCrit));
         p.setProperty("maxMultiHit", String.valueOf(maxMultiHit));
         p.setProperty("alwaysHit", String.valueOf(alwaysHit));
@@ -66,6 +71,7 @@ public final class Config {
     }
 
     public static int cropGrowth() { return cropGrowthMultiplier; }
+    public static boolean luckyBattles() { return luckyBattles; }
     public static boolean alwaysCrit() { return alwaysCrit; }
     public static boolean maxMultiHit() { return maxMultiHit; }
     public static boolean alwaysHit() { return alwaysHit; }
