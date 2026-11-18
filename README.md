@@ -30,3 +30,6 @@ Everything is on again (`luckyBattles=true`). The battle luck is now split into 
 
 ## v1.1.8
 Always-crit now also hooks Showdown's getDamage (in addition to useMoveInner), because another mod (Mega Showdown) can replace the first hook.
+
+## v1.1.9
+Fix: version 1.1.6 saved `luckyBattles=false` into config/maxivcapture.properties, and later versions kept reading that, so all battle luck stayed off. Old configs are now reset to on once (`configVersion=2`).

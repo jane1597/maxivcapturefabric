@@ -44,6 +44,8 @@ public final class Config {
             cropGrowthMultiplier = Math.max(1, Math.min(100, Integer.parseInt(p.getProperty("cropGrowthMultiplier", "1").trim())));
             guaranteedPokemonDrops = Boolean.parseBoolean(p.getProperty("guaranteedPokemonDrops", "true").trim());
             luckyBattles = Boolean.parseBoolean(p.getProperty("luckyBattles", "true").trim());
+            // 1.1.6 wrote luckyBattles=false into the file; from config version 2 on it is on again.
+            if (!"2".equals(p.getProperty("configVersion", "").trim())) luckyBattles = true;
             alwaysCrit = Boolean.parseBoolean(p.getProperty("alwaysCrit", "true").trim());
             maxMultiHit = Boolean.parseBoolean(p.getProperty("maxMultiHit", "true").trim());
             alwaysHit = Boolean.parseBoolean(p.getProperty("alwaysHit", "true").trim());
@@ -62,6 +64,7 @@ public final class Config {
         Properties p = new Properties();
         p.setProperty("cropGrowthMultiplier", String.valueOf(cropGrowthMultiplier));
         p.setProperty("guaranteedPokemonDrops", String.valueOf(guaranteedPokemonDrops));
+        p.setProperty("configVersion", "2");
         p.setProperty("luckyBattles", String.valueOf(luckyBattles));
         p.setProperty("alwaysCrit", String.valueOf(alwaysCrit));
         p.setProperty("maxMultiHit", String.valueOf(maxMultiHit));
