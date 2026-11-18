@@ -24,3 +24,6 @@ Config file `config/maxivcapture.properties`: `cropGrowthMultiplier` (1-100) and
 
 ## v1.1.6
 `luckyBattles` master switch (default false). When false the mod never touches the battle engine (alwaysCrit, maxMultiHit, alwaysHit, guaranteedEffects, doubleItemEffects do nothing). Added because battles stalled after picking a move on the updated Cobbleverse.
+
+## v1.1.7
+Everything is on again (`luckyBattles=true`). The battle luck is now split into two small independent scripts (held-item doubling, and crit/hit/effects/multi-hit). New in-game command `/maxiv status` and `/maxiv set <option> <true|false>` to switch any option live (battle options apply from the next battle). If a battle ever stalls, turn options off one at a time to find which one clashes with another mod.
