@@ -45,3 +45,6 @@ Crop growth now works for Cobblemon plants. Berry trees do not random tick (they
 
 ## v1.1.13
 Even crop growth. Each crop now has its own counter and gets its boost on a fixed schedule instead of a dice roll, so no crop falls behind. Fixed the real cause of crops that stopped growing: a crop was dropped from the list when it was harvested and was only re-added if a player placed it, so crops replanted by right-click harvesting, villagers, dispensers or other mods were never boosted again. Chunks are now re-scanned every second (a few at a time around each player).
+
+## v1.1.14
+Chance-based held items are now guaranteed for your Pokemon (needs luckyBattles + doubleItemEffects): Quick Claw always activates, Focus Band always saves you, and King's Rock / Razor Fang flinch always happens (item-added flinch is now covered by guaranteedEffects).

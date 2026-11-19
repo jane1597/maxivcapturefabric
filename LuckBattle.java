@@ -30,8 +30,10 @@ public final class LuckBattle {
             + "var cm=b.chainModify;b.chainModify=function(n,d){try{var ef=this.effect,t=this.effectState&&this.effectState.target;"
             + "if(ef&&ef.effectType==='Item'&&mine(t)){var m=Array.isArray(n)?n[0]/(n[1]?n[1]:1):n/(d?d:1);if(m>1){n=[Math.round((1+(m-1)*2)*4096),4096];d=1;}}}catch(e){}return cm.call(this,n,d);};"
             + "var hl=b.heal;b.heal=function(dm,t,s,e){try{var ef=e?e:this.effect,tt=t?t:(this.event&&this.event.target);"
-            + "if(ef&&ef.effectType==='Item'&&mine(tt)&&dm>0)dm=dm*2;}catch(e2){}return hl.call(this,dm,t,s,e);};}"
-            + "var pg=base('getDamage'),pu=base('useMoveInner');"
+            + "if(ef&&ef.effectType==='Item'&&mine(tt)&&dm>0)dm=dm*2;}catch(e2){}return hl.call(this,dm,t,s,e);};"
+            + "var rc=b.randomChance;b.randomChance=function(n,d){try{var ef=this.effect,t=this.effectState&&this.effectState.target;"
+            + "if(ef&&ef.effectType==='Item'&&(ef.id==='quickclaw'||ef.id==='focusband')&&mine(t))return true;}catch(e){}return rc.call(this,n,d);};}"
+            + "var pg=base('getDamage'),pu=base('useMoveInner'),ps=base('secondaries'),pw=base('switchIn');"
             + "var gd=function(s,t,m,q){try{if(C.crit&&mine(s)&&m&&typeof m==='object'&&m.category!=='Status')m.willCrit=true;patch(this.battle);}catch(e){}"
             + "var f=pg?pg:Object.getPrototypeOf(this).getDamage;return f.call(this,s,t,m,q);};gd.__luck=1;gd.__orig=pg;"
             + "var um=function(){var a=Array.prototype.slice.call(arguments);try{var m=a[0],p=a[1];if(mine(p)){"
@@ -43,7 +45,10 @@ public final class LuckBattle {
             + "if(am.category!=='Status'){if(C.crit)am.willCrit=true;if(C.multi&&Array.isArray(am.multihit))am.multihit=am.multihit[1];}a[0]=am;}"
             + "patch(this.battle);}catch(e){}"
             + "var f=pu?pu:Object.getPrototypeOf(this).useMoveInner;return f.apply(this,a);};um.__luck=1;um.__orig=pu;"
-            + "return {getDamage:gd,useMoveInner:um};})()";
+            + "var se=function(tg,src,mv,md,isSelf){try{if(C.eff&&mine(src)&&md&&md.secondaries){for(var i=0;i<md.secondaries.length;i++){var q=md.secondaries[i];if(q&&typeof q.chance==='number')q.chance=100;}}}catch(e){}"
+            + "var f=ps?ps:Object.getPrototypeOf(this).secondaries;return f.call(this,tg,src,mv,md,isSelf);};se.__luck=1;se.__orig=ps;"
+            + "var sw=function(){var a=Array.prototype.slice.call(arguments);try{patch(this.battle);}catch(e){}var f=pw?pw:Object.getPrototypeOf(this).switchIn;return f.apply(this,a);};sw.__luck=1;sw.__orig=pw;"
+            + "return {getDamage:gd,useMoveInner:um,secondaries:se,switchIn:sw};})()";
 
     public static String script() {
         boolean on = Config.luckyBattles();
