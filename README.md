@@ -42,3 +42,6 @@ Battle luck rebuilt. It no longer sends `>eval` into a running battle (that froz
 
 ## v1.1.12
 Crop growth now works for Cobblemon plants. Berry trees do not random tick (they grow on a timer), so the old booster ignored them. Cobblemon plants are now tracked if they can be bone-mealed, and get extra bone-meal growth steps scaled by `cropGrowthMultiplier` (`cobblemonStageSeconds`, default 300 = about how long one stage takes unboosted; lower it to grow faster).
+
+## v1.1.13
+Even crop growth. Each crop now has its own counter and gets its boost on a fixed schedule instead of a dice roll, so no crop falls behind. Fixed the real cause of crops that stopped growing: a crop was dropped from the list when it was harvested and was only re-added if a player placed it, so crops replanted by right-click harvesting, villagers, dispensers or other mods were never boosted again. Chunks are now re-scanned every second (a few at a time around each player).

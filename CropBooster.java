@@ -29,37 +29,53 @@ import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 
-import java.util.Iterator;
+import net.minecraft.world.level.ChunkPos;
+
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Crop growth multiplier. It keeps a list of every crop block in loaded chunks and gives each one extra
- * "random ticks" (the same thing the game uses to grow crops). Other random-tick things (grass spread,
- * leaf decay, fire ...) are NOT sped up, only crops.
+ * Crop growth multiplier with EVEN growth.
+ *
+ * Every crop block in a loaded chunk is tracked. Each crop has its own counter that fills at a fixed speed and
+ * then gets one extra "random tick" (or one bone-meal step for Cobblemon berry trees, which grow on a timer and do
+ * not random tick). No dice are rolled to decide WHICH crop gets a boost, so no crop is left behind.
+ * Chunks are re-scanned regularly, so crops that were replanted by right-click harvesting, villagers, dispensers
+ * or other mods are picked up too (the old version dropped a crop forever once it was harvested and replanted
+ * by something other than a player placing a block).
+ * Other random-tick things (grass spread, leaf decay, fire ...) are NOT sped up, only crops.
  */
 public class CropBooster {
     public static void register() {
         CropBooster c = new CropBooster();
         ServerChunkEvents.CHUNK_LOAD.register(c::onChunkLoad);
+        ServerChunkEvents.CHUNK_UNLOAD.register(c::onChunkUnload);
         ServerTickEvents.END_SERVER_TICK.register(c::onServerTick);
         UseBlockCallback.EVENT.register((player, world, hand, hit) -> {
             if (!world.isClientSide && player.getItemInHand(hand).getItem() instanceof BlockItem bi
                     && isCrop(bi.getBlock().defaultBlockState()) && world instanceof ServerLevel sl) {
                 BlockPos p = hit.getBlockPos();
-                c.setFor(sl.dimension()).add(p.asLong());
-                c.setFor(sl.dimension()).add(p.relative(hit.getDirection()).asLong());
+                c.track(sl.dimension(), p);
+                c.track(sl.dimension(), p.relative(hit.getDirection()));
             }
             return InteractionResult.PASS;
         });
     }
 
-    private static final int STEP = 2; // run every 2 ticks
+    private static final int STEP = 2;            // boost runs every 2 ticks
+    private static final int RESCAN_EVERY = 20;   // every second, re-scan a few chunks (round robin)
+    private static final int RESCAN_CHUNKS = 6;
 
-    private final Map<ResourceKey<Level>, Set<Long>> tracked = new ConcurrentHashMap<>();
+    /** crop position -> counter (random-tick units, or stage units for Cobblemon timer plants). */
+    private static final class Crop {
+        double acc;
+    }
+
+    private final Map<ResourceKey<Level>, Map<Long, Map<Long, Crop>>> tracked = new ConcurrentHashMap<>(); // dim -> chunk -> pos -> crop
     private int tick = 0;
+    private int rescanCursor = 0;
 
     private static boolean isCrop(BlockState state) {
         Block b = state.getBlock();
@@ -70,24 +86,38 @@ public class CropBooster {
                 || b instanceof PitcherCropBlock) {
             return true;
         }
-        // Cobblemon crops (berries, apricorns, mints ...). Berry trees do NOT random tick (they grow on a timer inside
-        // their block entity), so "random ticking" is not enough: any Cobblemon plant that can be bone-mealed counts.
         return isCobblemonPlant(state);
     }
 
+    /** Berry trees do not random tick (they grow on a timer in their block entity): anything bone-mealable counts. */
     private static boolean isCobblemonPlant(BlockState state) {
         Block b = state.getBlock();
         if (!"cobblemon".equals(BuiltInRegistries.BLOCK.getKey(b).getNamespace())) return false;
         return b instanceof BonemealableBlock || state.isRandomlyTicking();
     }
 
-    private Set<Long> setFor(ResourceKey<Level> dim) {
-        return tracked.computeIfAbsent(dim, k -> ConcurrentHashMap.newKeySet());
+    private Map<Long, Map<Long, Crop>> chunksFor(ResourceKey<Level> dim) {
+        return tracked.computeIfAbsent(dim, k -> new ConcurrentHashMap<>());
+    }
+
+    private void track(ResourceKey<Level> dim, BlockPos pos) {
+        long ck = ChunkPos.asLong(pos.getX() >> 4, pos.getZ() >> 4);
+        chunksFor(dim).computeIfAbsent(ck, k -> new ConcurrentHashMap<>()).putIfAbsent(pos.asLong(), new Crop());
+    }
+
+    private void onChunkUnload(ServerLevel level, LevelChunk chunk) {
+        chunksFor(level.dimension()).remove(chunk.getPos().toLong());
     }
 
     private void onChunkLoad(ServerLevel level, LevelChunk chunk) {
+        scan(level, chunk);
+    }
+
+    /** Rebuilds the crop list of one chunk. Counters of crops that are still there are kept. */
+    private void scan(ServerLevel level, LevelChunk chunk) {
         try {
-            Set<Long> set = setFor(level.dimension());
+            Map<Long, Crop> old = chunksFor(level.dimension()).get(chunk.getPos().toLong());
+            Map<Long, Crop> fresh = new ConcurrentHashMap<>();
             LevelChunkSection[] sections = chunk.getSections();
             int minSection = chunk.getMinSection();
             int baseX = chunk.getPos().getMinBlockX();
@@ -101,65 +131,88 @@ public class CropBooster {
                     for (int y = 0; y < 16; y++) {
                         for (int z = 0; z < 16; z++) {
                             if (isCrop(section.getBlockState(x, y, z))) {
-                                set.add(BlockPos.asLong(baseX + x, baseY + y, baseZ + z));
+                                long key = BlockPos.asLong(baseX + x, baseY + y, baseZ + z);
+                                Crop c = old == null ? null : old.get(key);
+                                fresh.put(key, c != null ? c : new Crop());
                             }
                         }
                     }
                 }
             }
+            if (fresh.isEmpty()) chunksFor(level.dimension()).remove(chunk.getPos().toLong());
+            else chunksFor(level.dimension()).put(chunk.getPos().toLong(), fresh);
         } catch (Exception ex) {
             MaxIvCapture.LOGGER.warn("Crop scan failed for a chunk: {}", ex.toString());
         }
     }
 
+    private void rescan(ServerLevel level) {
+        // chunks that have crops are re-checked, plus a rolling window of every other loaded chunk near players
+        // so brand new crops (right-click replant, villagers, dispensers, other mods) are found quickly.
+        java.util.List<net.minecraft.server.level.ServerPlayer> players = level.players();
+        if (players.isEmpty()) return;
+        for (int n = 0; n < RESCAN_CHUNKS; n++) {
+            net.minecraft.server.level.ServerPlayer p = players.get((rescanCursor + n) % players.size());
+            int r = 6;
+            int span = 2 * r + 1;
+            int idx = (rescanCursor * RESCAN_CHUNKS + n) % (span * span);
+            int cx = (p.getBlockX() >> 4) + (idx % span) - r;
+            int cz = (p.getBlockZ() >> 4) + (idx / span) - r;
+            if (level.hasChunk(cx, cz)) {
+                scan(level, level.getChunk(cx, cz));
+            }
+        }
+        rescanCursor++;
+    }
+
     private void onServerTick(MinecraftServer server) {
-        if (++tick % STEP != 0) return;
+        tick++;
         int mult = Config.cropGrowth();
         if (mult <= 1) return;
+        if (tick % RESCAN_EVERY == 0) {
+            for (ServerLevel level : server.getAllLevels()) rescan(level);
+        }
+        if (tick % STEP != 0) return;
+
+        double stageUnits = (mult - 1) * (double) STEP / (Config.cobblemonStageSeconds() * 20.0);
 
         for (ServerLevel level : server.getAllLevels()) {
-            Set<Long> set = tracked.get(level.dimension());
-            if (set == null || set.isEmpty()) continue;
+            Map<Long, Map<Long, Crop>> chunks = tracked.get(level.dimension());
+            if (chunks == null || chunks.isEmpty()) continue;
 
             int rts = level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
-            // chance that a block gets one natural random tick in STEP ticks is about rts/4096 per tick
-            double p = Math.min(1.0, (mult - 1) * (rts / 4096.0) * STEP);
-            if (p <= 0) continue;
+            // natural rate: one random tick per block about every 4096/rts ticks, so this is the EXTRA ticks per step
+            double tickUnits = (mult - 1) * (rts / 4096.0) * STEP;
 
-            // Timer-based Cobblemon plants (berry trees): one bone-meal step now and then. A stage lasts roughly
-            // Config.cobblemonStageSeconds() seconds by default, so the chance per step is scaled from that.
-            double pStage = Math.min(1.0, (mult - 1) * (double) STEP / (Config.cobblemonStageSeconds() * 20.0));
-
-            Iterator<Long> it = set.iterator();
-            while (it.hasNext()) {
-                long l = it.next();
-                BlockPos pos = BlockPos.of(l);
-                // Cobblemon berries / apricorns / mints: bone-meal path (this is what works for them)
-                if (level.random.nextDouble() < pStage && level.isLoaded(pos)) {
-                    BlockState cs = level.getBlockState(pos);
-                    if (isCobblemonPlant(cs) && cs.getBlock() instanceof BonemealableBlock bm) {
-                        try {
-                            if (level.isPositionEntityTicking(pos) && bm.isValidBonemealTarget(level, pos, cs)) {
-                                bm.performBonemeal(level, level.random, pos, cs);
+            for (Map<Long, Crop> chunk : chunks.values()) {
+                for (Map.Entry<Long, Crop> e : chunk.entrySet()) {
+                    BlockPos pos = BlockPos.of(e.getKey());
+                    Crop crop = e.getValue();
+                    if (!level.isLoaded(pos) || !level.isPositionEntityTicking(pos)) continue;
+                    BlockState st = level.getBlockState(pos);
+                    if (!isCrop(st)) continue;           // harvested for now; the re-scan drops it or keeps it if replanted
+                    try {
+                        boolean cobble = isCobblemonPlant(st) && st.getBlock() instanceof BonemealableBlock;
+                        crop.acc += cobble ? stageUnits : tickUnits;
+                        int guard = 0;
+                        while (crop.acc >= 1.0 && guard++ < 8) {
+                            crop.acc -= 1.0;
+                            if (cobble) {
+                                BonemealableBlock bm = (BonemealableBlock) st.getBlock();
+                                if (bm.isValidBonemealTarget(level, pos, st)) {
+                                    bm.performBonemeal(level, level.random, pos, st);
+                                } else {
+                                    crop.acc = 0;        // fully grown: nothing to bank
+                                }
+                            } else {
+                                st.randomTick(level, pos, level.random);
                             }
-                        } catch (Exception ignored) {
+                            st = level.getBlockState(pos);
+                            if (!isCrop(st)) break;
                         }
+                        if (crop.acc > 8) crop.acc = 8;
+                    } catch (Exception ignored) {
                     }
-                }
-                if (level.random.nextDouble() >= p) continue;
-                if (!level.isLoaded(pos)) {
-                    it.remove();
-                    continue;
-                }
-                if (!level.isPositionEntityTicking(pos)) continue;
-                BlockState st = level.getBlockState(pos);
-                if (!isCrop(st)) {
-                    it.remove();
-                    continue;
-                }
-                try {
-                    st.randomTick(level, pos, level.random);
-                } catch (Exception ignored) {
                 }
             }
         }
