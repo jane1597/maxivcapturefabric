@@ -11,10 +11,14 @@ import java.util.Properties;
 
 /** Settings, saved in config/maxivcapture.properties (created on first start). */
 public final class Config {
+    /** About how long one Cobblemon berry growth stage takes without help (seconds). Only scales the boost. */
+    public static volatile int cobblemonStageSeconds = 300;
     public static volatile int cropGrowthMultiplier = 1;
     public static volatile boolean guaranteedPokemonDrops = true;
 
-    /** Master switch for everything that touches the battle engine. Turn off to keep the mod away from the battle engine. */
+    /** Master switch for everything that touches the battle engine. Battle luck for the Pokemon of player side p1 (needs Mega Showdown). */
+    /** Ticks to wait after a battle starts before the luck is sent (20 ticks = 1 second). */
+    public static volatile int luckDelayTicks = 100;
     public static volatile boolean luckyBattles = true;
 
     public static volatile boolean alwaysCrit = true;
@@ -41,11 +45,13 @@ public final class Config {
                     p.load(in);
                 }
             }
+            cobblemonStageSeconds = Math.max(5, Math.min(7200, Integer.parseInt(p.getProperty("cobblemonStageSeconds", "300").trim())));
             cropGrowthMultiplier = Math.max(1, Math.min(100, Integer.parseInt(p.getProperty("cropGrowthMultiplier", "1").trim())));
             guaranteedPokemonDrops = Boolean.parseBoolean(p.getProperty("guaranteedPokemonDrops", "true").trim());
             luckyBattles = Boolean.parseBoolean(p.getProperty("luckyBattles", "true").trim());
-            // 1.1.6 wrote luckyBattles=false into the file; from config version 2 on it is on again.
-            if (!"2".equals(p.getProperty("configVersion", "").trim())) luckyBattles = true;
+            // Config version 4: new luck delivery (Showdown actions script, no more >eval). Reset the old saved value once.
+            if (!"4".equals(p.getProperty("configVersion", "").trim())) luckyBattles = true;
+            luckDelayTicks = Math.max(0, Math.min(1200, Integer.parseInt(p.getProperty("luckDelayTicks", "100").trim())));
             alwaysCrit = Boolean.parseBoolean(p.getProperty("alwaysCrit", "true").trim());
             maxMultiHit = Boolean.parseBoolean(p.getProperty("maxMultiHit", "true").trim());
             alwaysHit = Boolean.parseBoolean(p.getProperty("alwaysHit", "true").trim());
@@ -62,9 +68,11 @@ public final class Config {
     public static synchronized void save() {
         Path file = FabricLoader.getInstance().getConfigDir().resolve("maxivcapture.properties");
         Properties p = new Properties();
+        p.setProperty("cobblemonStageSeconds", String.valueOf(cobblemonStageSeconds));
         p.setProperty("cropGrowthMultiplier", String.valueOf(cropGrowthMultiplier));
         p.setProperty("guaranteedPokemonDrops", String.valueOf(guaranteedPokemonDrops));
-        p.setProperty("configVersion", "2");
+        p.setProperty("configVersion", "4");
+        p.setProperty("luckDelayTicks", String.valueOf(luckDelayTicks));
         p.setProperty("luckyBattles", String.valueOf(luckyBattles));
         p.setProperty("alwaysCrit", String.valueOf(alwaysCrit));
         p.setProperty("maxMultiHit", String.valueOf(maxMultiHit));
@@ -93,6 +101,7 @@ public final class Config {
             default -> { return false; }
         }
         save();
+        try { LuckBattle.push(); } catch (Throwable ignored) { }
         return true;
     }
 
@@ -112,7 +121,9 @@ public final class Config {
         };
     }
 
+    public static int cobblemonStageSeconds() { return cobblemonStageSeconds; }
     public static int cropGrowth() { return cropGrowthMultiplier; }
+    public static int luckDelayTicks() { return luckDelayTicks; }
     public static boolean luckyBattles() { return luckyBattles; }
     public static boolean alwaysCrit() { return alwaysCrit; }
     public static boolean maxMultiHit() { return maxMultiHit; }

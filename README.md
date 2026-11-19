@@ -33,3 +33,12 @@ Always-crit now also hooks Showdown's getDamage (in addition to useMoveInner), b
 
 ## v1.1.9
 Fix: version 1.1.6 saved `luckyBattles=false` into config/maxivcapture.properties, and later versions kept reading that, so all battle luck stayed off. Old configs are now reset to on once (`configVersion=2`).
+
+## v1.1.10
+Battle luck froze battles at "Turn 0" on Cobblemon 1.8.4, so `luckyBattles` is OFF by default again (configVersion 3 resets it once). If you want to try it: `/maxiv set luckyBattles true`; it now sends one script `luckDelayTicks` (default 100 = 5 s) AFTER the battle starts instead of during the start. EXPERIMENTAL: if a battle freezes, turn it off again.
+
+## v1.1.11
+Battle luck rebuilt. It no longer sends `>eval` into a running battle (that froze battles at "Turn 0" on Cobblemon 1.8.4). It now gives Showdown a small script through `receiveScriptData("actions", ...)`, the same door Mega Showdown's own data-pack scripts use. It is pushed on server start, data-pack reload, player join and every `/maxiv set`, and applies to battles that start afterwards (player side p1). Needs Mega Showdown (Cobbleverse has it). `luckDelayTicks` is no longer used. Also fixes useMoveInner dropping the zMove/maxMove arguments.
+
+## v1.1.12
+Crop growth now works for Cobblemon plants. Berry trees do not random tick (they grow on a timer), so the old booster ignored them. Cobblemon plants are now tracked if they can be bone-mealed, and get extra bone-meal growth steps scaled by `cropGrowthMultiplier` (`cobblemonStageSeconds`, default 300 = about how long one stage takes unboosted; lower it to grow faster).

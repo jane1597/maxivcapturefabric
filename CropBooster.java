@@ -9,6 +9,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.BambooStalkBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.CactusBlock;
 import net.minecraft.world.level.block.ChorusFlowerBlock;
 import net.minecraft.world.level.block.CocoaBlock;
@@ -69,9 +70,15 @@ public class CropBooster {
                 || b instanceof PitcherCropBlock) {
             return true;
         }
-        // Cobblemon crops (berries, apricorns, mints ...) and other Cobblemon random-tick blocks
-        return state.isRandomlyTicking()
-                && "cobblemon".equals(BuiltInRegistries.BLOCK.getKey(b).getNamespace());
+        // Cobblemon crops (berries, apricorns, mints ...). Berry trees do NOT random tick (they grow on a timer inside
+        // their block entity), so "random ticking" is not enough: any Cobblemon plant that can be bone-mealed counts.
+        return isCobblemonPlant(state);
+    }
+
+    private static boolean isCobblemonPlant(BlockState state) {
+        Block b = state.getBlock();
+        if (!"cobblemon".equals(BuiltInRegistries.BLOCK.getKey(b).getNamespace())) return false;
+        return b instanceof BonemealableBlock || state.isRandomlyTicking();
     }
 
     private Set<Long> setFor(ResourceKey<Level> dim) {
@@ -119,11 +126,27 @@ public class CropBooster {
             double p = Math.min(1.0, (mult - 1) * (rts / 4096.0) * STEP);
             if (p <= 0) continue;
 
+            // Timer-based Cobblemon plants (berry trees): one bone-meal step now and then. A stage lasts roughly
+            // Config.cobblemonStageSeconds() seconds by default, so the chance per step is scaled from that.
+            double pStage = Math.min(1.0, (mult - 1) * (double) STEP / (Config.cobblemonStageSeconds() * 20.0));
+
             Iterator<Long> it = set.iterator();
             while (it.hasNext()) {
                 long l = it.next();
-                if (level.random.nextDouble() >= p) continue;
                 BlockPos pos = BlockPos.of(l);
+                // Cobblemon berries / apricorns / mints: bone-meal path (this is what works for them)
+                if (level.random.nextDouble() < pStage && level.isLoaded(pos)) {
+                    BlockState cs = level.getBlockState(pos);
+                    if (isCobblemonPlant(cs) && cs.getBlock() instanceof BonemealableBlock bm) {
+                        try {
+                            if (level.isPositionEntityTicking(pos) && bm.isValidBonemealTarget(level, pos, cs)) {
+                                bm.performBonemeal(level, level.random, pos, cs);
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+                if (level.random.nextDouble() >= p) continue;
                 if (!level.isLoaded(pos)) {
                     it.remove();
                     continue;
