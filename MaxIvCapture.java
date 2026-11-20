@@ -39,6 +39,7 @@ public class MaxIvCapture implements ModInitializer {
         DropAll.register();
         PastureTweak.register();
         LuckBattle.register();
+        BallBuff.register();
         MaxivCommand.register();
         LOGGER.info("Max IV Capture loaded: max IVs on capture, crop growth multiplier, guaranteed Pokemon drops, lucky battles.");
     }

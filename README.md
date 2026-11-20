@@ -48,3 +48,6 @@ Even crop growth. Each crop now has its own counter and gets its boost on a fixe
 
 ## v1.1.14
 Chance-based held items are now guaranteed for your Pokemon (needs luckyBattles + doubleItemEffects): Quick Claw always activates, Focus Band always saves you, and King's Rock / Razor Fang flinch always happens (item-added flinch is now covered by guaranteedEffects).
+
+## v1.1.15
+Poke Ball buff: every ball's catch rate is multiplied by `ballMultiplier` (default 2.0; Poke Ball 1x -> 2x, Great 1.5x -> 3x, ...). Master Ball stays guaranteed. Change live with `/maxiv ball <1-20>`.

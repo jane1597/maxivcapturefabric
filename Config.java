@@ -13,6 +13,8 @@ import java.util.Properties;
 public final class Config {
     /** About how long one Cobblemon berry growth stage takes without help (seconds). Only scales the boost. */
     public static volatile int cobblemonStageSeconds = 300;
+    /** Catch rate multiplier applied on top of every Poke Ball (1 = vanilla). */
+    public static volatile double ballMultiplier = 2.0;
     public static volatile int cropGrowthMultiplier = 1;
     public static volatile boolean guaranteedPokemonDrops = true;
 
@@ -46,6 +48,7 @@ public final class Config {
                 }
             }
             cobblemonStageSeconds = Math.max(5, Math.min(7200, Integer.parseInt(p.getProperty("cobblemonStageSeconds", "300").trim())));
+            ballMultiplier = Math.max(1.0, Math.min(20.0, Double.parseDouble(p.getProperty("ballMultiplier", "2.0").trim())));
             cropGrowthMultiplier = Math.max(1, Math.min(100, Integer.parseInt(p.getProperty("cropGrowthMultiplier", "1").trim())));
             guaranteedPokemonDrops = Boolean.parseBoolean(p.getProperty("guaranteedPokemonDrops", "true").trim());
             luckyBattles = Boolean.parseBoolean(p.getProperty("luckyBattles", "true").trim());
@@ -69,6 +72,7 @@ public final class Config {
         Path file = FabricLoader.getInstance().getConfigDir().resolve("maxivcapture.properties");
         Properties p = new Properties();
         p.setProperty("cobblemonStageSeconds", String.valueOf(cobblemonStageSeconds));
+        p.setProperty("ballMultiplier", String.valueOf(ballMultiplier));
         p.setProperty("cropGrowthMultiplier", String.valueOf(cropGrowthMultiplier));
         p.setProperty("guaranteedPokemonDrops", String.valueOf(guaranteedPokemonDrops));
         p.setProperty("configVersion", "4");
@@ -122,6 +126,8 @@ public final class Config {
     }
 
     public static int cobblemonStageSeconds() { return cobblemonStageSeconds; }
+    public static double ballMultiplier() { return ballMultiplier; }
+    public static void setBallMultiplier(double v) { ballMultiplier = Math.max(1.0, Math.min(20.0, v)); save(); }
     public static int cropGrowth() { return cropGrowthMultiplier; }
     public static int luckDelayTicks() { return luckDelayTicks; }
     public static boolean luckyBattles() { return luckyBattles; }

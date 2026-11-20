@@ -1,6 +1,7 @@
 package com.maxivcapture;
 
 import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.CommandSourceStack;
@@ -24,11 +25,20 @@ public final class MaxivCommand {
                         StringBuilder sb = new StringBuilder("Max IV Capture:");
                         for (String n : Config.TOGGLES) sb.append("\n  ").append(n).append(" = ").append(Config.get(n));
                         sb.append("\n  cropGrowthMultiplier = ").append(Config.cropGrowth());
+                        sb.append("\n  ballMultiplier = ").append(Config.ballMultiplier());
                         sb.append("\n  pastureDropsPerHour = ").append(Config.pastureDropsPerHour());
                         String msg = sb.toString();
                         ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
                         return 1;
                     }))
+                    .then(Commands.literal("ball")
+                            .then(Commands.argument("multiplier", DoubleArgumentType.doubleArg(1.0, 20.0)).executes(ctx -> {
+                                double v = DoubleArgumentType.getDouble(ctx, "multiplier");
+                                Config.setBallMultiplier(v);
+                                BallBuff.apply();
+                                ctx.getSource().sendSuccess(() -> Component.literal("Poke Ball catch rate multiplier = x" + v + " (1 = vanilla)"), false);
+                                return 1;
+                            })))
                     .then(Commands.literal("set")
                             .then(Commands.argument("name", StringArgumentType.word())
                                     .suggests((c, b) -> SharedSuggestionProvider.suggest(Config.TOGGLES, b))
