@@ -51,3 +51,6 @@ Chance-based held items are now guaranteed for your Pokemon (needs luckyBattles 
 
 ## v1.1.15
 Poke Ball buff: every ball's catch rate is multiplied by `ballMultiplier` (default 2.0; Poke Ball 1x -> 2x, Great 1.5x -> 3x, ...). Master Ball stays guaranteed. Change live with `/maxiv ball <1-20>`.
+
+## v1.1.16
+Exp. Share for the whole party: when one of your Pokemon earns battle exp, every other healthy Pokemon in your party gets the same exp (`expShare`, `expShareRatio` 1.0 = full, 0.5 = half). Toggle: `/maxiv set expShare false`.

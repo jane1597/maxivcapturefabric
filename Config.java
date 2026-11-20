@@ -14,6 +14,9 @@ public final class Config {
     /** About how long one Cobblemon berry growth stage takes without help (seconds). Only scales the boost. */
     public static volatile int cobblemonStageSeconds = 300;
     /** Catch rate multiplier applied on top of every Poke Ball (1 = vanilla). */
+    /** Party-wide exp share on knock-out, and how much of the earned exp the non-participants get (1.0 = full). */
+    public static volatile boolean expShare = true;
+    public static volatile double expShareRatio = 1.0;
     public static volatile double ballMultiplier = 2.0;
     public static volatile int cropGrowthMultiplier = 1;
     public static volatile boolean guaranteedPokemonDrops = true;
@@ -48,6 +51,8 @@ public final class Config {
                 }
             }
             cobblemonStageSeconds = Math.max(5, Math.min(7200, Integer.parseInt(p.getProperty("cobblemonStageSeconds", "300").trim())));
+            expShare = Boolean.parseBoolean(p.getProperty("expShare", "true").trim());
+            expShareRatio = Math.max(0.0, Math.min(5.0, Double.parseDouble(p.getProperty("expShareRatio", "1.0").trim())));
             ballMultiplier = Math.max(1.0, Math.min(20.0, Double.parseDouble(p.getProperty("ballMultiplier", "2.0").trim())));
             cropGrowthMultiplier = Math.max(1, Math.min(100, Integer.parseInt(p.getProperty("cropGrowthMultiplier", "1").trim())));
             guaranteedPokemonDrops = Boolean.parseBoolean(p.getProperty("guaranteedPokemonDrops", "true").trim());
@@ -72,6 +77,8 @@ public final class Config {
         Path file = FabricLoader.getInstance().getConfigDir().resolve("maxivcapture.properties");
         Properties p = new Properties();
         p.setProperty("cobblemonStageSeconds", String.valueOf(cobblemonStageSeconds));
+        p.setProperty("expShare", String.valueOf(expShare));
+        p.setProperty("expShareRatio", String.valueOf(expShareRatio));
         p.setProperty("ballMultiplier", String.valueOf(ballMultiplier));
         p.setProperty("cropGrowthMultiplier", String.valueOf(cropGrowthMultiplier));
         p.setProperty("guaranteedPokemonDrops", String.valueOf(guaranteedPokemonDrops));
@@ -100,6 +107,7 @@ public final class Config {
             case "alwaysHit" -> alwaysHit = v;
             case "guaranteedEffects" -> guaranteedEffects = v;
             case "doubleItemEffects" -> doubleItemEffects = v;
+            case "expShare" -> expShare = v;
             case "maxRideStats" -> maxRideStats = v;
             case "guaranteedPokemonDrops" -> guaranteedPokemonDrops = v;
             default -> { return false; }
@@ -109,7 +117,7 @@ public final class Config {
         return true;
     }
 
-    public static final String[] TOGGLES = {"luckyBattles", "alwaysCrit", "maxMultiHit", "alwaysHit", "guaranteedEffects", "doubleItemEffects", "maxRideStats", "guaranteedPokemonDrops"};
+    public static final String[] TOGGLES = {"luckyBattles", "alwaysCrit", "maxMultiHit", "alwaysHit", "guaranteedEffects", "doubleItemEffects", "expShare", "maxRideStats", "guaranteedPokemonDrops"};
 
     public static boolean get(String name) {
         return switch (name) {
@@ -119,6 +127,7 @@ public final class Config {
             case "alwaysHit" -> alwaysHit;
             case "guaranteedEffects" -> guaranteedEffects;
             case "doubleItemEffects" -> doubleItemEffects;
+            case "expShare" -> expShare;
             case "maxRideStats" -> maxRideStats;
             case "guaranteedPokemonDrops" -> guaranteedPokemonDrops;
             default -> false;
@@ -126,6 +135,8 @@ public final class Config {
     }
 
     public static int cobblemonStageSeconds() { return cobblemonStageSeconds; }
+    public static boolean expShare() { return expShare; }
+    public static double expShareRatio() { return expShareRatio; }
     public static double ballMultiplier() { return ballMultiplier; }
     public static void setBallMultiplier(double v) { ballMultiplier = Math.max(1.0, Math.min(20.0, v)); save(); }
     public static int cropGrowth() { return cropGrowthMultiplier; }
