@@ -12,9 +12,9 @@ import java.util.UUID;
 
 /**
  * Exp. Share for the whole party, like the newer Pokemon games: when a Pokemon of yours earns battle experience,
- * every other (not fainted) Pokemon in the same player's party gets experience too.
+ * every other (not fainted) Pokemon in the same player's party gets a share of it (default 50%).
  *
- * How: we listen to Cobblemon's "experience gained" event. All gains of one knock-out arrive in the same tick,
+ * How: we listen to Cobblemon's "experience gained (pre)" event. All gains of one knock-out arrive in the same tick,
  * so they are collected per player and handled at the end of that tick: the largest single gain (times
  * Config.expShareRatio) goes to every party member that did not get anything. Our own grants use a "sidemod"
  * source and are ignored by the listener, so nothing loops. Everything is reflection + try/catch.
@@ -30,13 +30,14 @@ public final class ExpShare {
 
     private static final Map<UUID, Gain> GAINS = new HashMap<>();
     private static boolean subscribed = false;
+    private static Object SERVER = null;
 
     public static void register() {
         try {
             Class<?> events = Class.forName("com.cobblemon.mod.common.api.events.CobblemonEvents");
-            Object obs = events.getField("EXPERIENCE_GAINED_EVENT_POST").get(null);
+            Object obs = events.getField("EXPERIENCE_GAINED_EVENT_PRE").get(null);
             Class<?> prio = Class.forName("com.cobblemon.mod.common.api.Priority");
-            Object normal = prio.getField("NORMAL").get(null);
+            Object normal = prio.getField("LOWEST").get(null); // last, so other mods have already changed the amount
             Method sub = null;
             for (Method m : obs.getClass().getMethods()) {
                 if (m.getName().equals("subscribe") && m.getParameterCount() == 2 && m.getParameterTypes()[0] == prio) {
@@ -60,7 +61,10 @@ public final class ExpShare {
             MaxIvCapture.LOGGER.warn("Exp share: could not hook Cobblemon's experience event ({}). Feature off.", t.toString());
             return;
         }
-        ServerTickEvents.END_SERVER_TICK.register(server -> flush());
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            SERVER = server;
+            flush();
+        });
     }
 
     private static Object call(Object o, String name) throws Exception {
@@ -69,13 +73,29 @@ public final class ExpShare {
 
     private static void onGain(Object event) throws Exception {
         if (!Config.expShare()) return;
+        try {
+            if ((Boolean) call(event, "isCanceled")) return;
+        } catch (NoSuchMethodException ignored) {
+        }
         Object source = call(event, "getSource");
         if (source == null || !source.getClass().getSimpleName().contains("Battle")) return; // ignore our own and non-battle xp
         Object pokemon = call(event, "getPokemon");
         Object xpObj = call(event, "getExperience");
         int xp = xpObj instanceof Number n ? n.intValue() : 0;
         if (xp <= 0) return;
-        Object owner = call(pokemon, "getOwnerPlayer");
+        Object owner = null;
+        try {
+            owner = call(pokemon, "getOwnerPlayer");
+        } catch (Throwable ignored) {
+        }
+        if (owner == null && SERVER != null) {
+            try {
+                Object uuid = call(pokemon, "getOwnerUUID");
+                Object plist = call(SERVER, "getPlayerList");
+                owner = plist.getClass().getMethod("getPlayer", UUID.class).invoke(plist, uuid);
+            } catch (Throwable ignored) {
+            }
+        }
         if (owner == null) return;
         UUID id = (UUID) call(owner, "getUUID");
         Gain g = GAINS.computeIfAbsent(id, k -> new Gain());
@@ -122,15 +142,14 @@ public final class ExpShare {
             if (p == null || g.got.contains(p)) continue;
             boolean fainted = (Boolean) call(p, "isFainted");
             if (fainted) continue;
-            Method add = null;
+            Method withPlayer = null, plain = null;
             for (Method m : p.getClass().getMethods()) {
-                if (m.getName().equals("addExperience") && m.getParameterCount() == 2) {
-                    add = m;
-                    break;
-                }
+                if (m.getName().equals("addExperienceWithPlayer") && m.getParameterCount() == 3) withPlayer = m;
+                if (m.getName().equals("addExperience") && m.getParameterCount() == 2) plain = m;
             }
-            if (add == null) throw new NoSuchMethodException("addExperience(source, xp)");
-            add.invoke(p, source, xp);
+            if (withPlayer != null) withPlayer.invoke(p, g.owner, source, xp);   // shows level-up / evolution like normal
+            else if (plain != null) plain.invoke(p, source, xp);
+            else throw new NoSuchMethodException("addExperience(source, xp)");
             given++;
         }
         if (given > 0) {

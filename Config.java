@@ -14,9 +14,9 @@ public final class Config {
     /** About how long one Cobblemon berry growth stage takes without help (seconds). Only scales the boost. */
     public static volatile int cobblemonStageSeconds = 300;
     /** Catch rate multiplier applied on top of every Poke Ball (1 = vanilla). */
-    /** Party-wide exp share on knock-out, and how much of the earned exp the non-participants get (1.0 = full). */
+    /** Party-wide exp share on knock-out, and how much of the earned exp the non-participants get (0.5 = half). */
     public static volatile boolean expShare = true;
-    public static volatile double expShareRatio = 1.0;
+    public static volatile double expShareRatio = 0.5;
     public static volatile double ballMultiplier = 2.0;
     public static volatile int cropGrowthMultiplier = 1;
     public static volatile boolean guaranteedPokemonDrops = true;
@@ -51,14 +51,15 @@ public final class Config {
                 }
             }
             cobblemonStageSeconds = Math.max(5, Math.min(7200, Integer.parseInt(p.getProperty("cobblemonStageSeconds", "300").trim())));
+            if (!"5".equals(p.getProperty("configVersion", "").trim())) p.setProperty("expShareRatio", "0.5"); // 1.1.17: default is 50% now
             expShare = Boolean.parseBoolean(p.getProperty("expShare", "true").trim());
-            expShareRatio = Math.max(0.0, Math.min(5.0, Double.parseDouble(p.getProperty("expShareRatio", "1.0").trim())));
+            expShareRatio = Math.max(0.0, Math.min(5.0, Double.parseDouble(p.getProperty("expShareRatio", "0.5").trim())));
             ballMultiplier = Math.max(1.0, Math.min(20.0, Double.parseDouble(p.getProperty("ballMultiplier", "2.0").trim())));
             cropGrowthMultiplier = Math.max(1, Math.min(100, Integer.parseInt(p.getProperty("cropGrowthMultiplier", "1").trim())));
             guaranteedPokemonDrops = Boolean.parseBoolean(p.getProperty("guaranteedPokemonDrops", "true").trim());
             luckyBattles = Boolean.parseBoolean(p.getProperty("luckyBattles", "true").trim());
             // Config version 4: new luck delivery (Showdown actions script, no more >eval). Reset the old saved value once.
-            if (!"4".equals(p.getProperty("configVersion", "").trim())) luckyBattles = true;
+            if (Integer.parseInt(p.getProperty("configVersion", "0").trim()) < 4) luckyBattles = true;
             luckDelayTicks = Math.max(0, Math.min(1200, Integer.parseInt(p.getProperty("luckDelayTicks", "100").trim())));
             alwaysCrit = Boolean.parseBoolean(p.getProperty("alwaysCrit", "true").trim());
             maxMultiHit = Boolean.parseBoolean(p.getProperty("maxMultiHit", "true").trim());
@@ -82,7 +83,7 @@ public final class Config {
         p.setProperty("ballMultiplier", String.valueOf(ballMultiplier));
         p.setProperty("cropGrowthMultiplier", String.valueOf(cropGrowthMultiplier));
         p.setProperty("guaranteedPokemonDrops", String.valueOf(guaranteedPokemonDrops));
-        p.setProperty("configVersion", "4");
+        p.setProperty("configVersion", "5");
         p.setProperty("luckDelayTicks", String.valueOf(luckDelayTicks));
         p.setProperty("luckyBattles", String.valueOf(luckyBattles));
         p.setProperty("alwaysCrit", String.valueOf(alwaysCrit));

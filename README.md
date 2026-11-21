@@ -54,3 +54,6 @@ Poke Ball buff: every ball's catch rate is multiplied by `ballMultiplier` (defau
 
 ## v1.1.16
 Exp. Share for the whole party: when one of your Pokemon earns battle exp, every other healthy Pokemon in your party gets the same exp (`expShare`, `expShareRatio` 1.0 = full, 0.5 = half). Toggle: `/maxiv set expShare false`.
+
+## v1.1.17
+Exp. Share fixed: now uses Cobblemon's EXPERIENCE_GAINED_EVENT_PRE (the event other mods use) instead of the POST one, which did not fire for the share. Default share is 50% (winner 500 exp -> every other healthy party member 250). `expShareRatio` in the config changes it (1.0 = full); old configs are reset to 0.5 once.
