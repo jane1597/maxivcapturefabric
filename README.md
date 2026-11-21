@@ -57,3 +57,9 @@ Exp. Share for the whole party: when one of your Pokemon earns battle exp, every
 
 ## v1.1.17
 Exp. Share fixed: now uses Cobblemon's EXPERIENCE_GAINED_EVENT_PRE (the event other mods use) instead of the POST one, which did not fire for the share. Default share is 50% (winner 500 exp -> every other healthy party member 250). `expShareRatio` in the config changes it (1.0 = full); old configs are reset to 0.5 once.
+
+## v1.1.18
+From a real latest.log: Exp. Share failed to hook (reflection 'argument type mismatch') -> now a normal typed subscription to EXPERIENCE_GAINED_EVENT_PRE. Ball buff found 0 balls -> balls are now looked up with PokeBalls.getPokeBall(id) for every *_ball item; if wrapping still fails the log prints the ball's fields.
+
+## v1.1.19
+Config file `config/maxivcapture.properties` is now a documented file: grouped, every option explained in a comment, created on first start. `/maxiv reload` re-reads it without restarting.

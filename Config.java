@@ -76,25 +76,57 @@ public final class Config {
 
     public static synchronized void save() {
         Path file = FabricLoader.getInstance().getConfigDir().resolve("maxivcapture.properties");
-        Properties p = new Properties();
-        p.setProperty("cobblemonStageSeconds", String.valueOf(cobblemonStageSeconds));
-        p.setProperty("expShare", String.valueOf(expShare));
-        p.setProperty("expShareRatio", String.valueOf(expShareRatio));
-        p.setProperty("ballMultiplier", String.valueOf(ballMultiplier));
-        p.setProperty("cropGrowthMultiplier", String.valueOf(cropGrowthMultiplier));
-        p.setProperty("guaranteedPokemonDrops", String.valueOf(guaranteedPokemonDrops));
-        p.setProperty("configVersion", "5");
-        p.setProperty("luckDelayTicks", String.valueOf(luckDelayTicks));
-        p.setProperty("luckyBattles", String.valueOf(luckyBattles));
-        p.setProperty("alwaysCrit", String.valueOf(alwaysCrit));
-        p.setProperty("maxMultiHit", String.valueOf(maxMultiHit));
-        p.setProperty("alwaysHit", String.valueOf(alwaysHit));
-        p.setProperty("maxRideStats", String.valueOf(maxRideStats));
-        p.setProperty("guaranteedEffects", String.valueOf(guaranteedEffects));
-        p.setProperty("doubleItemEffects", String.valueOf(doubleItemEffects));
-        p.setProperty("pastureDropsPerHour", String.valueOf(pastureDropsPerHour));
-        try (OutputStream out = Files.newOutputStream(file)) {
-            p.store(out, "Max IV Capture. pastureDropsPerHour: Pasture Loot drops per hour per Pokemon (0 = do not change). cropGrowthMultiplier: 1 (normal) to 100. guaranteedPokemonDrops: true = every Pokemon drops its whole drop table.");
+        StringBuilder s = new StringBuilder();
+        s.append("# ==========================================================================\n");
+        s.append("#  Max IV Capture - settings\n");
+        s.append("#  Edit, save, then run /maxiv reload in game (or restart). true/false or numbers.\n");
+        s.append("#  You can also change most of these in game: /maxiv status, /maxiv set <name> <true|false>, /maxiv ball <x>\n");
+        s.append("# ==========================================================================\n\n");
+
+        s.append("# ---------- Pokeballs ----------\n");
+        s.append("# Catch rate multiplier on top of EVERY ball. 1 = vanilla, 2 = double (Poke 1x->2x, Great 1.5x->3x ...). Range 1-20.\n");
+        s.append("ballMultiplier=").append(ballMultiplier).append("\n\n");
+
+        s.append("# ---------- Exp. Share ----------\n");
+        s.append("# true = when one of your Pokemon earns battle exp, the other healthy Pokemon in your party get a share too.\n");
+        s.append("expShare=").append(expShare).append("\n");
+        s.append("# How much of the winner's exp the others get. 0.5 = half (500 exp -> 250), 1.0 = full. Range 0-5.\n");
+        s.append("expShareRatio=").append(expShareRatio).append("\n\n");
+
+        s.append("# ---------- Battle luck (your Pokemon only; needs Mega Showdown) ----------\n");
+        s.append("# Master switch for everything below. false = the mod never touches battles.\n");
+        s.append("luckyBattles=").append(luckyBattles).append("\n");
+        s.append("# Every attack is a critical hit.\n");
+        s.append("alwaysCrit=").append(alwaysCrit).append("\n");
+        s.append("# Moves never miss.\n");
+        s.append("alwaysHit=").append(alwaysHit).append("\n");
+        s.append("# Multi-hit moves (Fury Attack, Bullet Seed ...) always hit the maximum number of times.\n");
+        s.append("maxMultiHit=").append(maxMultiHit).append("\n");
+        s.append("# Every 'chance' move effect always happens (flinch, burn, paralysis, stat drops ...), incl. King's Rock / Razor Fang.\n");
+        s.append("guaranteedEffects=").append(guaranteedEffects).append("\n");
+        s.append("# Held items get stronger: Choice Band, Leftovers etc. doubled; Quick Claw and Focus Band always activate.\n");
+        s.append("doubleItemEffects=").append(doubleItemEffects).append("\n\n");
+
+        s.append("# ---------- Capture / drops / rides ----------\n");
+        s.append("# Drops: every Pokemon drops its WHOLE drop table (100% chance for every item).\n");
+        s.append("guaranteedPokemonDrops=").append(guaranteedPokemonDrops).append("\n");
+        s.append("# Ride stats of every Pokemon set to the maximum.\n");
+        s.append("maxRideStats=").append(maxRideStats).append("\n\n");
+
+        s.append("# ---------- Farming ----------\n");
+        s.append("# Crop growth speed. 1 = normal, 10 = ten times faster. Range 1-100. Works for vanilla crops and Cobblemon berries/apricorns.\n");
+        s.append("cropGrowthMultiplier=").append(cropGrowthMultiplier).append("\n");
+        s.append("# About how many seconds one Cobblemon berry growth stage takes unboosted (only scales the boost; lower = faster berries).\n");
+        s.append("cobblemonStageSeconds=").append(cobblemonStageSeconds).append("\n");
+        s.append("# Pasture Loot drops per hour per pastured Pokemon (its own default is 3). 0 = do not touch Pasture Loot's file.\n");
+        s.append("pastureDropsPerHour=").append(pastureDropsPerHour).append("\n\n");
+
+        s.append("# ---------- Internal (leave alone) ----------\n");
+        s.append("configVersion=5\n");
+        s.append("luckDelayTicks=").append(luckDelayTicks).append("\n");
+        try {
+            Files.createDirectories(file.getParent());
+            Files.writeString(file, s.toString(), java.nio.charset.StandardCharsets.UTF_8);
         } catch (IOException ignored) {
         }
     }

@@ -31,6 +31,13 @@ public final class MaxivCommand {
                         ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
                         return 1;
                     }))
+                    .then(Commands.literal("reload").executes(ctx -> {
+                        Config.load();
+                        try { LuckBattle.push(); } catch (Throwable ignored) { }
+                        try { BallBuff.apply(); } catch (Throwable ignored) { }
+                        ctx.getSource().sendSuccess(() -> Component.literal("Max IV Capture: config/maxivcapture.properties reloaded. Battle options apply from the next battle."), false);
+                        return 1;
+                    }))
                     .then(Commands.literal("ball")
                             .then(Commands.argument("multiplier", DoubleArgumentType.doubleArg(1.0, 20.0)).executes(ctx -> {
                                 double v = DoubleArgumentType.getDouble(ctx, "multiplier");

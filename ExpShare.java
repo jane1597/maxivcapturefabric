@@ -1,5 +1,9 @@
 package com.maxivcapture;
 
+import com.cobblemon.mod.common.api.Priority;
+import com.cobblemon.mod.common.api.events.CobblemonEvents;
+import com.cobblemon.mod.common.api.pokemon.experience.BattleExperienceSource;
+import kotlin.Unit;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 
 import java.lang.reflect.Constructor;
@@ -34,27 +38,17 @@ public final class ExpShare {
 
     public static void register() {
         try {
-            Class<?> events = Class.forName("com.cobblemon.mod.common.api.events.CobblemonEvents");
-            Object obs = events.getField("EXPERIENCE_GAINED_EVENT_PRE").get(null);
-            Class<?> prio = Class.forName("com.cobblemon.mod.common.api.Priority");
-            Object normal = prio.getField("LOWEST").get(null); // last, so other mods have already changed the amount
-            Method sub = null;
-            for (Method m : obs.getClass().getMethods()) {
-                if (m.getName().equals("subscribe") && m.getParameterCount() == 2 && m.getParameterTypes()[0] == prio) {
-                    sub = m;
-                    break;
-                }
-            }
-            if (sub == null) throw new NoSuchMethodException("subscribe(Priority, handler)");
-            kotlin.jvm.functions.Function1<Object, kotlin.Unit> handler = e -> {
+            // direct (typed) subscription: this is the same call other Cobblemon add-ons use, reflection broke here
+            CobblemonEvents.EXPERIENCE_GAINED_EVENT_PRE.subscribe(Priority.LOWEST, event -> {
                 try {
-                    onGain(e);
+                    if (!event.isCanceled() && event.getSource() instanceof BattleExperienceSource) {
+                        onGain(event.getPokemon(), event.getExperience());
+                    }
                 } catch (Throwable t) {
                     MaxIvCapture.LOGGER.warn("Exp share: {}", t.toString());
                 }
-                return kotlin.Unit.INSTANCE;
-            };
-            sub.invoke(obs, normal, handler);
+                return Unit.INSTANCE;
+            });
             subscribed = true;
             MaxIvCapture.LOGGER.info("Exp share: party-wide experience is on.");
         } catch (Throwable t) {
@@ -71,18 +65,8 @@ public final class ExpShare {
         return o.getClass().getMethod(name).invoke(o);
     }
 
-    private static void onGain(Object event) throws Exception {
-        if (!Config.expShare()) return;
-        try {
-            if ((Boolean) call(event, "isCanceled")) return;
-        } catch (NoSuchMethodException ignored) {
-        }
-        Object source = call(event, "getSource");
-        if (source == null || !source.getClass().getSimpleName().contains("Battle")) return; // ignore our own and non-battle xp
-        Object pokemon = call(event, "getPokemon");
-        Object xpObj = call(event, "getExperience");
-        int xp = xpObj instanceof Number n ? n.intValue() : 0;
-        if (xp <= 0) return;
+    private static void onGain(Object pokemon, int xp) throws Exception {
+        if (!Config.expShare() || xp <= 0) return;
         Object owner = null;
         try {
             owner = call(pokemon, "getOwnerPlayer");

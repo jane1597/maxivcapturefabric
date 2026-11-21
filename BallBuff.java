@@ -58,21 +58,27 @@ public final class BallBuff {
         try {
             Class<?> ballsC = Class.forName("com.cobblemon.mod.common.api.pokeball.PokeBalls");
             Object inst = ballsC.getField("INSTANCE").get(null);
+            Method getBall = null;
+            for (Method m : ballsC.getMethods()) {
+                if (m.getName().equals("getPokeBall") && m.getParameterCount() == 1
+                        && m.getParameterTypes()[0] == net.minecraft.resources.ResourceLocation.class) {
+                    getBall = m;
+                    break;
+                }
+            }
+            if (getBall == null) throw new NoSuchMethodException("PokeBalls.getPokeBall(ResourceLocation)");
+            // every item called "..._ball" (Cobblemon's own and add-on balls) that Cobblemon knows as a Poke Ball
             List<Object> balls = new ArrayList<>();
             Map<Object, Boolean> seen = new IdentityHashMap<>();
-            for (Method m : ballsC.getMethods()) {
-                if (m.getParameterCount() != 0 || Modifier.isStatic(m.getModifiers())) continue;
-                Object r;
+            for (net.minecraft.resources.ResourceLocation id : net.minecraft.core.registries.BuiltInRegistries.ITEM.keySet()) {
+                if (!id.getPath().endsWith("_ball") || id.getNamespace().equals("minecraft")) continue;
+                Object ball;
                 try {
-                    r = m.invoke(inst);
+                    ball = getBall.invoke(inst, id);
                 } catch (Throwable t) {
                     continue;
                 }
-                Iterable<?> it = r instanceof Map<?, ?> mp ? mp.values() : r instanceof Iterable<?> i ? i : null;
-                if (it == null) continue;
-                for (Object o : it) {
-                    if (o != null && o.getClass().getSimpleName().equals("PokeBall") && seen.put(o, true) == null) balls.add(o);
-                }
+                if (ball != null && seen.put(ball, true) == null) balls.add(ball);
             }
             int wrapped = 0;
             for (Object ball : balls) {
@@ -80,8 +86,11 @@ public final class BallBuff {
             }
             if (!logged) {
                 logged = true;
-                if (wrapped == 0) MaxIvCapture.LOGGER.warn("Ball buff: found {} balls but could not wrap any catch rate modifier (Cobblemon changed?). Balls left alone.", balls.size());
-                else MaxIvCapture.LOGGER.info("Ball buff: catch rate x{} on {} Poke Balls.", Config.ballMultiplier(), wrapped);
+                if (wrapped == 0) {
+                    MaxIvCapture.LOGGER.warn("Ball buff: found {} balls but could not wrap any catch rate modifier (Cobblemon changed?). Balls left alone. {}", balls.size(), describe(balls));
+                } else {
+                    MaxIvCapture.LOGGER.info("Ball buff: catch rate x{} on {} Poke Balls.", Config.ballMultiplier(), wrapped);
+                }
             }
         } catch (Throwable t) {
             if (!logged) {
@@ -89,6 +98,25 @@ public final class BallBuff {
                 MaxIvCapture.LOGGER.warn("Ball buff: could not reach Cobblemon's balls: {}", t.toString());
             }
         }
+    }
+
+    /** For the log when wrapping fails: what the first ball looks like, so the next fix is not a guess. */
+    private static String describe(List<Object> balls) {
+        if (balls.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder("PokeBall fields: ");
+        for (Class<?> c = balls.get(0).getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
+            for (Field f : c.getDeclaredFields()) {
+                if (Modifier.isStatic(f.getModifiers())) continue;
+                sb.append(f.getName()).append(':').append(f.getType().getSimpleName());
+                if (f.getType().isInterface()) {
+                    sb.append('{');
+                    for (Method m : f.getType().getMethods()) sb.append(m.getName()).append(',');
+                    sb.append('}');
+                }
+                sb.append(' ');
+            }
+        }
+        return sb.toString();
     }
 
     private static boolean wrap(Object ball) {
